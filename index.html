@@ -4,41 +4,76 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fichaje Alumida</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="favicon.png">
   <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #f2f2f2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+    :root {
+      --bg:#f2f2f2;
+      --green:#34a853;   /* entrada */
+      --red:#ea4335;     /* salida  */
+      --text:#ffffff;
+      --title:#222;
+      --gap:28px;
+      --btn-radius:16px;
+      --btn-pad:22px 28px;
+      --btn-font:28px;
+      --maxw:1100px;
     }
-    h1 { font-size: 3vh; margin-bottom: 2vh; }
-    .botones { display: grid; grid-template-columns: 1fr 1fr; gap: 2vh; }
-    button {
-      padding: 2vh 3vh;
-      font-size: 2vh;
-      border: none;
-      border-radius: 1vh;
-      cursor: pointer;
-      background-color: #1976d2;
-      color: white;
+    * { box-sizing: border-box; }
+    html, body {
+      margin:0; height:100%; background:var(--bg); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
+    .wrap {
+      min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:40px 20px;
+    }
+    .container { width:100%; max-width:var(--maxw); }
+    h1 {
+      text-align:center; color:var(--title); font-size:42px; margin:0 0 36px;
+      letter-spacing:.3px; font-weight:800;
+    }
+    .grid {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+      align-items:center;
+      justify-items:stretch;
+    }
+    @media (max-width:900px){
+      .grid { grid-template-columns: 1fr; }
+    }
+    .row { display:contents; }
+    .btn {
+      display:block; width:100%;
+      color:var(--text); text-decoration:none; text-align:center;
+      padding: var(--btn-pad);
+      font-size: var(--btn-font); font-weight:800;
+      border:none; border-radius: var(--btn-radius);
+      box-shadow: 0 6px 18px rgba(0,0,0,.15);
+      cursor:pointer; transition: transform .02s ease-in;
+      user-select:none;
+    }
+    .btn:active { transform: scale(.99); }
+    .btn.in  { background:var(--green); }
+    .btn.out { background:var(--red); }
   </style>
 </head>
 <body>
-  <h1>Pantalla de fichaje</h1>
-  <div class="botones">
-    <!-- Salvador -->
-    <button onclick="fichar('Salvador', 'entrada')">Salvador Entrada</button>
-    <button onclick="fichar('Salvador', 'salida')">Salvador Salida</button>
-    <!-- Gloria -->
-    <button onclick="fichar('Gloria', 'entrada')">Gloria Entrada</button>
-    <button onclick="fichar('Gloria', 'salida')">Gloria Salida</button>
+  <div class="wrap">
+    <div class="container">
+      <h1>Fichaje — Alumida</h1>
+
+      <div class="grid" id="grid">
+        <!-- Fila: Salvador -->
+        <div class="row">
+          <button class="btn in"  onclick="fichar('Salvador','entrada')">Salvador — Entrada</button>
+          <button class="btn out" onclick="fichar('Salvador','salida')">Salvador — Salida</button>
+        </div>
+        <!-- Fila: Gloria -->
+        <div class="row">
+          <button class="btn in"  onclick="fichar('Gloria','entrada')">Gloria — Entrada</button>
+          <button class="btn out" onclick="fichar('Gloria','salida')">Gloria — Salida</button>
+        </div>
+        <!-- Duplica la fila anterior para cada empleado -->
+      </div>
+    </div>
   </div>
 
   <script>
@@ -46,9 +81,9 @@
 
     function fichar(nombre, tipo) {
       const url = `${WEBAPP_URL}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1`;
-      fetch(url)
-        .then(() => alert(`${nombre} - ${tipo} registrada`))
-        .catch(() => alert("Error al fichar"));
+      fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-store' })
+        .then(() => alert(`${nombre} — ${tipo} registrada`))
+        .catch(() => alert('Error al fichar'));
     }
   </script>
 </body>
