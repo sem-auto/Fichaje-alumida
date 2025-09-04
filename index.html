@@ -3,53 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fichaje Alumida</title>
+  <title>Fichaje — Alumida</title>
   <style>
-    body {
-      margin:0; height:100vh;
-      display:flex; align-items:center; justify-content:center;
-      background:#f2f2f2; font-family:sans-serif;
+    :root{
+      --green:#34a853;
+      --red:#ea4335;
+      --bg:#f2f2f2;
     }
-    .container { text-align:center; }
-    h1 {
-      font-size:28px; margin-bottom:30px; color:#222;
+    *{box-sizing:border-box}
+    html,body{
+      margin:0; height:100%;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
     }
-    .grid {
+    .wrap{
+      min-height:100%;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:flex-start;
+      padding-top:6vh; /* sube más el bloque */
+    }
+    h1{
+      margin:0 0 40px;
+      font-size:34px;
+      font-weight:800;
+      color:#222;
+      text-align:center;
+    }
+    .grid{
       display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:16px;
+      grid-template-columns:1fr 1fr;
+      gap:28px; /* más espacio entre botones */
+      width:90%;
+      max-width:900px;
     }
-    .btn {
-      padding:14px 18px;
-      font-size:18px;
-      font-weight:bold;
-      border:none; border-radius:8px;
-      color:#fff; cursor:pointer;
+    @media(max-width:800px){
+      .grid{grid-template-columns:1fr}
     }
-    .in  { background:#34a853; }
-    .out { background:#ea4335; }
+    .btn{
+      display:block;
+      width:100%;
+      padding:22px 28px;   /* botones más grandes */
+      font-size:22px;
+      font-weight:800;
+      color:#fff;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      box-shadow:0 6px 18px rgba(0,0,0,.12);
+      transition:transform .05s ease-in;
+    }
+    .btn:active{transform:scale(.98)}
+    .in{background:var(--green)}
+    .out{background:var(--red)}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Fichaje — Alumida</h1>
+  <div class="wrap">
+    <h1>Fichajes — Alumida</h1>
     <div class="grid">
+      <!-- Salvador -->
       <button class="btn in"  onclick="fichar('Salvador','entrada')">Salvador — Entrada</button>
       <button class="btn out" onclick="fichar('Salvador','salida')">Salvador — Salida</button>
+      <!-- Gloria -->
       <button class="btn in"  onclick="fichar('Gloria','entrada')">Gloria — Entrada</button>
       <button class="btn out" onclick="fichar('Gloria','salida')">Gloria — Salida</button>
     </div>
   </div>
 
   <script>
-    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyroIF8wuENtISA1j0Bw6bYCX_lFYHMbv1bYGkOT5UBjF8C22k5MELkByQrI9Iv90Vh/exec";
-    function fichar(nombre, tipo) {
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmcEg8zwV1OMG9ogfC5V4Y5fDvOv2yNoYb2uLTN1KE7oK8R_XjdrZ5yww6uS0fqwsy/exec";
+
+    function fichar(nombre, tipo){
       const url = `${WEBAPP_URL}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1`;
-      fetch(url, { method: 'GET', mode: 'no-cors' })
-        .then(() => alert(`${nombre} — ${tipo} registrada`))
-        .catch(() => alert('Error al fichar'));
+      fetch(url,{method:'GET',mode:'no-cors',cache:'no-store'})
+        .then(()=>alert(`${nombre} — ${tipo} registrada`))
+        .catch(()=>alert('Error al fichar'));
     }
   </script>
 </body>
 </html>
-
