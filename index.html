@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fichaje — Alumida</title>
+  <title>Fichajes — Alumida</title>
   <style>
     :root{
       --green:#34a853;
@@ -20,7 +20,7 @@
       min-height:100%;
       display:flex; flex-direction:column;
       align-items:center; justify-content:flex-start;
-      padding-top:6vh; /* sube más el bloque */
+      padding-top:6vh;
     }
     h1{
       margin:0 0 40px;
@@ -32,7 +32,7 @@
     .grid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:28px; /* más espacio entre botones */
+      gap:28px;
       width:90%;
       max-width:900px;
     }
@@ -42,7 +42,7 @@
     .btn{
       display:block;
       width:100%;
-      padding:22px 28px;   /* botones más grandes */
+      padding:22px 28px;
       font-size:22px;
       font-weight:800;
       color:#fff;
@@ -64,20 +64,23 @@
       <!-- Salvador -->
       <button class="btn in"  onclick="fichar('Salvador','entrada')">Salvador — Entrada</button>
       <button class="btn out" onclick="fichar('Salvador','salida')">Salvador — Salida</button>
-      <!-- Gloria -->
-      <button class="btn in"  onclick="fichar('Gloria','entrada')">Gloria — Entrada</button>
-      <button class="btn out" onclick="fichar('Gloria','salida')">Gloria — Salida</button>
+      <!-- Mari Paz -->
+      <button class="btn in"  onclick="fichar('Mari Paz','entrada')">Mari Paz — Entrada</button>
+      <button class="btn out" onclick="fichar('Mari Paz','salida')">Mari Paz — Salida</button>
     </div>
   </div>
 
- <script>
-  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmcEg8zwV1OMG9ogfC5V4Y5fDvOv2yNoYb2uLTN1KE7oK8R_XjdrZ5yww6uS0fqwsy/exec";
+  <script>
+    // URL actualizada del WebApp
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmcEg8zwV1OMG9ogfC5V4Y5fDvOv2yNoYb2uLTN1KE7oK8R_XjdrZ5yww6uS0fqwsy/exec";
 
     function fichar(nombre, tipo){
-      const url = `${WEBAPP_URL}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1`;
-      fetch(url,{method:'GET',mode:'no-cors',cache:'no-store'})
-        .then(()=>alert(`${nombre} — ${tipo} registrada`))
-        .catch(()=>alert('Error al fichar'));
+      const url = `${WEBAPP_URL}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1&t=${Date.now()}`;
+      // Ping fiable sin CORS
+      const img = new Image();
+      img.src = url;
+      // Aviso rápido al usuario
+      setTimeout(()=>alert(`${nombre} — ${tipo} registrada`), 300);
     }
   </script>
 </body>
