@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fichaje Alumida</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 { font-size: 3vh; margin-bottom: 2vh; }
+    .botones { display: grid; grid-template-columns: 1fr 1fr; gap: 2vh; }
+    button {
+      padding: 2vh 3vh;
+      font-size: 2vh;
+      border: none;
+      border-radius: 1vh;
+      cursor: pointer;
+      background-color: #1976d2;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pantalla de fichaje</h1>
+  <div class="botones">
+    <!-- Salvador -->
+    <button onclick="fichar('Salvador', 'entrada')">Salvador Entrada</button>
+    <button onclick="fichar('Salvador', 'salida')">Salvador Salida</button>
+    <!-- Gloria -->
+    <button onclick="fichar('Gloria', 'entrada')">Gloria Entrada</button>
+    <button onclick="fichar('Gloria', 'salida')">Gloria Salida</button>
+  </div>
+
+  <script>
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyroIF8wuENtISA1j0Bw6bYCX_lFYHMbv1bYGkOT5UBjF8C22k5MELkByQrI9Iv90Vh/exec";
+
+    function fichar(nombre, tipo) {
+      const url = `${WEBAPP_URL}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1`;
+      fetch(url)
+        .then(() => alert(`${nombre} - ${tipo} registrada`))
+        .catch(() => alert("Error al fichar"));
+    }
+  </script>
+</body>
+</html>
