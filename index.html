@@ -2,85 +2,111 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fichajes — Alumida</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fichaje Alumida</title>
   <style>
-    :root{
-      --green:#34a853;
-      --red:#ea4335;
-      --bg:#f2f2f2;
+    :root { --gap: 18px; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #f4f6f8; color: #111;
+      min-height: 100vh; display: grid; place-items: center;
     }
-    *{box-sizing:border-box}
-    html,body{
-      margin:0; height:100%;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:var(--bg);
+    .wrap { width: 100%; max-width: 560px; padding: 24px; }
+    h1 { margin: 0 0 18px; font-size: 22px; text-align: center; }
+    .grid {
+      display: grid; grid-template-columns: 1fr; gap: var(--gap);
     }
-    .wrap{
-      min-height:100%;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:flex-start;
-      padding-top:6vh;
+    @media (min-width: 460px) {
+      .grid { grid-template-columns: 1fr 1fr; }
     }
-    h1{
-      margin:0 0 40px;
-      font-size:34px;
-      font-weight:800;
-      color:#222;
-      text-align:center;
+    button {
+      appearance: none; border: 0; border-radius: 14px; padding: 18px 16px;
+      font-size: 18px; font-weight: 600; cursor: pointer;
+      color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.12);
+      transition: transform .04s ease;
+      width: 100%;
     }
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:28px;
-      width:90%;
-      max-width:900px;
+    button:active { transform: scale(.98); }
+    .in  { background: #16a34a; }   /* verde */
+    .out { background: #dc2626; }   /* rojo  */
+    .status {
+      margin-top: var(--gap); padding: 14px 16px; border-radius: 12px;
+      background: #fff; border: 1px solid #e5e7eb; font-size: 15px;
+      min-height: 48px; display: flex; align-items: center; justify-content: center; text-align: center;
     }
-    @media(max-width:800px){
-      .grid{grid-template-columns:1fr}
-    }
-    .btn{
-      display:block;
-      width:100%;
-      padding:22px 28px;
-      font-size:22px;
-      font-weight:800;
-      color:#fff;
-      border:none;
-      border-radius:12px;
-      cursor:pointer;
-      box-shadow:0 6px 18px rgba(0,0,0,.12);
-      transition:transform .05s ease-in;
-    }
-    .btn:active{transform:scale(.98)}
-    .in{background:var(--green)}
-    .out{background:var(--red)}
+    .small { font-size: 12px; color: #6b7280; text-align: center; margin-top: 10px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Fichajes — Alumida</h1>
+    <h1>Fichaje Alumida</h1>
+
     <div class="grid">
-      <!-- Salvador -->
-      <button class="btn in"  onclick="fichar('Salvador','entrada')">Salvador — Entrada</button>
-      <button class="btn out" onclick="fichar('Salvador','salida')">Salvador — Salida</button>
-      <!-- Mari Paz -->
-      <button class="btn in"  onclick="fichar('Mari Paz','entrada')">Mari Paz — Entrada</button>
-      <button class="btn out" onclick="fichar('Mari Paz','salida')">Mari Paz — Salida</button>
+      <!-- Cambia los nombres aquí -->
+      <button class="in"  onclick="fichar('Salvador','entrada')">Salvador — Entrada</button>
+      <button class="out" onclick="fichar('Salvador','salida')">Salvador — Salida</button>
+
+      <button class="in"  onclick="fichar('Mari Paz','entrada')">Mari Paz — Entrada</button>
+      <button class="out" onclick="fichar('Mari Paz','salida')">Mari Paz — Salida</button>
     </div>
+
+    <div id="status" class="status">Listo</div>
+    <div class="small">Si en móvil no muestra confirmación, se abrirá una pestaña con el OK.</div>
   </div>
 
   <script>
-    // URL actualizada del WebApp
-   const WEBAPP = "https://script.google.com/macros/s/AKfycbyIWt6JlbjeuWrFKP8VD9V6-6-DUVLbpxH0BsQNO33jnicOxXMqGDJolDtQe5XvO5P6/exec";
+    // URL WebApp /exec funcional:
+    const WEBAPP = "https://script.google.com/macros/s/AKfycbyIWt6JlbjeuWrFKP8VD9V6-6-DUVLbpxH0BsQNO33jnicOxXMqGDJolDtQe5XvO5P6/exec";
 
-    function fichar(nombre, tipo){
-      const url = `${WEBAPP_URL}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1&t=${Date.now()}`;
-      // Ping fiable sin CORS
-      const img = new Image();
-      img.src = url;
-      // Aviso rápido al usuario
-      setTimeout(()=>alert(`${nombre} — ${tipo} registrada`), 300);
+    const statusBox = document.getElementById('status');
+
+    function setStatus(msg) {
+      statusBox.textContent = msg;
+    }
+
+    async function fichar(nombre, tipo) {
+      const url = WEBAPP
+        + "?nombre=" + encodeURIComponent(nombre)
+        + "&tipo=" + encodeURIComponent(tipo)
+        + "&plain=1"
+        + "&t=" + Date.now(); // anti-cache
+
+      setStatus("Enviando…");
+
+      // 1) Intento con fetch (con keepalive + no-store). Si falla, fallback window.open
+      try {
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 8000); // timeout 8s móvil
+        const res = await fetch(url, {
+          method: "GET",
+          cache: "no-store",
+          redirect: "follow",
+          keepalive: true,
+          signal: ctrl.signal,
+        });
+        clearTimeout(to);
+
+        // Aunque CORS sea opaco, si no lanza excepción damos por bueno.
+        // Si hay cuerpo legible, lo mostramos.
+        let text = "";
+        try { text = await res.text(); } catch (_) {}
+        if (text && /^OK\s/i.test(text)) {
+          setStatus(text);
+        } else {
+          setStatus(`OK ${nombre} — ${new Date().toLocaleString()}`);
+        }
+      } catch (err) {
+        // 2) Fallback robusto para Safari/iOS: abrir la URL (muestra “OK …” en la pestaña nueva)
+        setStatus("Abriendo confirmación…");
+        const w = window.open(url, "_blank", "noopener,noreferrer");
+        if (!w) {
+          // 3) Fallback final: “ping” con Image (no confirmable, pero registra)
+          const img = new Image();
+          img.src = url + "&img=1";
+          setStatus(`Enviado (sin confirmación). Verifica en la hoja.`);
+        }
+      }
     }
   </script>
 </body>
