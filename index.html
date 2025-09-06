@@ -6,17 +6,14 @@
   <title>Fichaje Alumida</title>
   <style>
     :root { --gap: 18px; }
-    * { box-sizing: border-box; }
     body {
-      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0; font-family: system-ui, Arial, sans-serif;
       background: #f4f6f8; color: #111;
       min-height: 100vh; display: grid; place-items: center;
     }
     .wrap { width: 100%; max-width: 560px; padding: 24px; }
     h1 { margin: 0 0 18px; font-size: 22px; text-align: center; }
-    .grid {
-      display: grid; grid-template-columns: 1fr; gap: var(--gap);
-    }
+    .grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); }
     @media (min-width: 460px) {
       .grid { grid-template-columns: 1fr 1fr; }
     }
@@ -24,8 +21,7 @@
       appearance: none; border: 0; border-radius: 14px; padding: 18px 16px;
       font-size: 18px; font-weight: 600; cursor: pointer;
       color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.12);
-      transition: transform .04s ease;
-      width: 100%;
+      transition: transform .04s ease; width: 100%;
     }
     button:active { transform: scale(.98); }
     .in  { background: #16a34a; }   /* verde */
@@ -35,77 +31,42 @@
       background: #fff; border: 1px solid #e5e7eb; font-size: 15px;
       min-height: 48px; display: flex; align-items: center; justify-content: center; text-align: center;
     }
-    .small { font-size: 12px; color: #6b7280; text-align: center; margin-top: 10px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Fichaje Alumida</h1>
-
     <div class="grid">
-      <!-- Cambia los nombres aquí -->
       <button class="in"  onclick="fichar('Salvador','entrada')">Salvador — Entrada</button>
       <button class="out" onclick="fichar('Salvador','salida')">Salvador — Salida</button>
-
       <button class="in"  onclick="fichar('Mari Paz','entrada')">Mari Paz — Entrada</button>
       <button class="out" onclick="fichar('Mari Paz','salida')">Mari Paz — Salida</button>
     </div>
-
     <div id="status" class="status">Listo</div>
-    <div class="small">Si en móvil no muestra confirmación, se abrirá una pestaña con el OK.</div>
   </div>
 
   <script>
-    // URL WebApp /exec funcional:
     const WEBAPP = "https://script.google.com/macros/s/AKfycbyIWt6JlbjeuWrFKP8VD9V6-6-DUVLbpxH0BsQNO33jnicOxXMqGDJolDtQe5XvO5P6/exec";
-
     const statusBox = document.getElementById('status');
 
-    function setStatus(msg) {
-      statusBox.textContent = msg;
-    }
+    function setStatus(msg) { statusBox.textContent = msg; }
 
     async function fichar(nombre, tipo) {
       const url = WEBAPP
         + "?nombre=" + encodeURIComponent(nombre)
         + "&tipo=" + encodeURIComponent(tipo)
         + "&plain=1"
-        + "&t=" + Date.now(); // anti-cache
+        + "&t=" + Date.now();
 
       setStatus("Enviando…");
 
-      // 1) Intento con fetch (con keepalive + no-store). Si falla, fallback window.open
       try {
-        const ctrl = new AbortController();
-        const to = setTimeout(() => ctrl.abort(), 8000); // timeout 8s móvil
-        const res = await fetch(url, {
-          method: "GET",
-          cache: "no-store",
-          redirect: "follow",
-          keepalive: true,
-          signal: ctrl.signal,
-        });
-        clearTimeout(to);
-
-        // Aunque CORS sea opaco, si no lanza excepción damos por bueno.
-        // Si hay cuerpo legible, lo mostramos.
-        let text = "";
-        try { text = await res.text(); } catch (_) {}
-        if (text && /^OK\s/i.test(text)) {
-          setStatus(text);
-        } else {
-          setStatus(`OK ${nombre} — ${new Date().toLocaleString()}`);
-        }
+        await fetch(url, { method: "GET", cache: "no-store", keepalive: true });
+        // Aunque no podamos leer la respuesta por CORS, damos confirmación local:
+        const stamp = new Date().toLocaleString("es-ES");
+        setStatus(`OK ${nombre} — ${stamp}`);
       } catch (err) {
-        // 2) Fallback robusto para Safari/iOS: abrir la URL (muestra “OK …” en la pestaña nueva)
-        setStatus("Abriendo confirmación…");
-        const w = window.open(url, "_blank", "noopener,noreferrer");
-        if (!w) {
-          // 3) Fallback final: “ping” con Image (no confirmable, pero registra)
-          const img = new Image();
-          img.src = url + "&img=1";
-          setStatus(`Enviado (sin confirmación). Verifica en la hoja.`);
-        }
+        setStatus("Error de conexión, inténtalo otra vez");
       }
     }
   </script>
