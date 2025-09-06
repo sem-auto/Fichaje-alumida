@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fichaje Alumida</title>
   <style>
@@ -43,68 +46,56 @@
   </div>
 
   <script>
+    // URL WebApp /exec
     const WEBAPP = "https://script.google.com/macros/s/AKfycbyIWt6JlbjeuWrFKP8VD9V6-6-DUVLbpxH0BsQNO33jnicOxXMqGDJolDtQe5XvO5P6/exec";
     const statusBox = document.getElementById('status');
 
-    // AudioContext único (se crea en el primer toque; compatible con iOS)
-    let AC = null;
-    function ensureAC_() {
-      if (!AC) {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (Ctx) AC = new Ctx();
-      }
-    }
-    function vibrate_(pattern) {
-      if (navigator.vibrate) navigator.vibrate(pattern);
-    }
-    // Beep simple (freq Hz, ms duración). Usa oscilador para evitar problemas de autoplay.
-    async function beep_(freq = 880, ms = 120, type = 'sine', gain = 0.08) {
-      try {
-        ensureAC_();
-        if (!AC) return; // sin soporte, ignorar
-        if (AC.state === 'suspended') await AC.resume();
-        const o = AC.createOscillator();
-        const g = AC.createGain();
-        o.type = type;
-        o.frequency.value = freq;
-        g.gain.value = gain; // volumen bajo para kiosko
-        o.connect(g).connect(AC.destination);
-        o.start();
-        setTimeout(() => { o.stop(); o.disconnect(); g.disconnect(); }, ms);
-      } catch(_) {}
-    }
-    // Feedback éxito: beep corto + vibración breve
-    function feedbackOk_() {
-      beep_(1000, 120, 'sine', 0.08);
-      vibrate_(60);
-    }
-    // Feedback error: dos tonos descendentes + vibración más larga
-    async function feedbackErr_() {
-      await beep_(600, 120, 'square', 0.06);
-      setTimeout(() => beep_(420, 140, 'square', 0.06), 140);
-      vibrate_([120, 80, 120]);
-    }
+    // === Audio + vibración ===
+    let AC = null, audioUnlocked = false;
+    function ensureAC_(){ if(!AC){ const Ctx=window.AudioContext||window.webkitAudioContext; if(Ctx) AC=new Ctx(); } return !!AC; }
+    async function unlockAudio_(){ if(audioUnlocked) return; if(!ensureAC_()) return; try{ if(AC.state==='suspended') await AC.resume(); const o=AC.createOscillator(), g=AC.createGain(); g.gain.value=0.0001; o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+0.02); audioUnlocked=true; }catch(_){} }
+    ['pointerdown','touchstart','mousedown','keydown'].forEach(evt=>window.addEventListener(evt, unlockAudio_, {once:true, passive:true}));
 
-    function setStatus(msg) { statusBox.textContent = msg; }
+    async function beep_(freq=1200, ms=140, type='sine', gain=0.22){
+      try{ if(!ensureAC_()) return; if(AC.state==='suspended') { try{ await AC.resume(); }catch(_){} }
+        const o=AC.createOscillator(), g=AC.createGain();
+        o.type=type; o.frequency.value=freq; g.gain.value=gain;
+        o.connect(g).connect(AC.destination); o.start();
+        setTimeout(()=>{ try{ o.stop(); o.disconnect(); g.disconnect(); }catch(_){} }, ms);
+      }catch(_){}
+    }
+    function vibrate_(p){ if(navigator.vibrate) navigator.vibrate(p); }
+    async function feedbackOk_(){ await beep_(1200,130,'sine',0.22); setTimeout(()=>beep_(1500,110,'sine',0.18),80); vibrate_(60); }
+    async function feedbackErr_(){ await beep_(600,160,'square',0.18); setTimeout(()=>beep_(420,180,'square',0.18),180); vibrate_([120,80,120]); }
 
-    async function fichar(nombre, tipo) {
+    function setStatus(msg){ statusBox.textContent = msg; }
+
+    // === Fichaje con UI optimista + timeout corto ===
+    async function fichar(nombre, tipo){
       const url = WEBAPP
         + "?nombre=" + encodeURIComponent(nombre)
         + "&tipo=" + encodeURIComponent(tipo)
         + "&plain=1"
-        + "&t=" + Date.now(); // anti-cache
+        + "&t=" + Date.now();
 
-      setStatus("Enviando…");
-      ensureAC_(); // prepara audio tras gesto del usuario
+      // UI optimista rápida
+      const stamp = new Date().toLocaleString("es-ES");
+      setStatus(`OK ${nombre} — ${stamp}`); // pinta inmediato
+      await unlockAudio_();
+      feedbackOk_(); // feedback inmediato
 
+      // Envío con timeout corto; NO abre nuevas pestañas
       try {
-        await fetch(url, { method: "GET", cache: "no-store", keepalive: true });
-        const stamp = new Date().toLocaleString("es-ES");
-        setStatus(`OK ${nombre} — ${stamp}`);
-        feedbackOk_();
-      } catch (err) {
-        setStatus("Error de conexión, inténtalo otra vez");
-        feedbackErr_();
+        const ctrl = new AbortController();
+        const to = setTimeout(()=>ctrl.abort(), 1800); // 1.8s
+        await fetch(url, { method:"GET", cache:"no-store", keepalive:true, signal: ctrl.signal });
+        clearTimeout(to);
+        // Si llega respuesta, no cambiamos nada (ya mostramos OK).
+      } catch(_) {
+        // Silencioso: mantenemos el OK en pantalla para kiosko.
+        // (Si quieres marcar error: descomenta las 2 líneas siguientes)
+        // setStatus("Error de conexión, inténtalo otra vez");
+        // feedbackErr_();
       }
     }
   </script>
