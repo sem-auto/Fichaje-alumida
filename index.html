@@ -9,38 +9,31 @@
   <title>Fichaje Alumida</title>
   <style>
     :root { --gap: 18px; }
-    body {
-      margin: 0; font-family: system-ui, Arial, sans-serif;
-      background: #f4f6f8; color: #111;
-      min-height: 100vh; display: grid; place-items: center;
-    }
+    body { margin: 0; font-family: system-ui, Arial, sans-serif; background: #f4f6f8; color: #111;
+           min-height: 100vh; display: grid; place-items: center; }
     .wrap { width: 100%; max-width: 560px; padding: 24px; }
     h1 { margin: 0 0 18px; font-size: 22px; text-align: center; }
     .grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); }
     @media (min-width: 460px) { .grid { grid-template-columns: 1fr 1fr; } }
-    button {
-      appearance: none; border: 0; border-radius: 14px; padding: 18px 16px;
-      font-size: 18px; font-weight: 600; cursor: pointer; color: #fff;
-      box-shadow: 0 6px 16px rgba(0,0,0,.12); transition: transform .04s ease; width: 100%;
-    }
+    button { appearance: none; border: 0; border-radius: 14px; padding: 18px 16px;
+             font-size: 18px; font-weight: 600; cursor: pointer; color: #fff;
+             box-shadow: 0 6px 16px rgba(0,0,0,.12); transition: transform .04s ease; width: 100%; }
     button:active { transform: scale(.98); }
     .in  { background: #16a34a; }   /* verde */
     .out { background: #dc2626; }   /* rojo  */
-    .status {
-      margin-top: var(--gap); padding: 14px 16px; border-radius: 12px;
-      background: #fff; border: 1px solid #e5e7eb; font-size: 15px;
-      min-height: 48px; display: flex; align-items: center; justify-content: center; text-align: center;
-    }
+    .status { margin-top: var(--gap); padding: 14px 16px; border-radius: 12px; background: #fff;
+              border: 1px solid #e5e7eb; font-size: 15px; min-height: 48px; display: flex;
+              align-items: center; justify-content: center; text-align: center; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Fichaje Alumida</h1>
     <div class="grid">
-      <button class="in"  onclick="fichar('Salvador','entrada')">Salvador — Entrada</button>
-      <button class="out" onclick="fichar('Salvador','salida')">Salvador — Salida</button>
-      <button class="in"  onclick="fichar('Mari Paz','entrada')">Mari Paz — Entrada</button>
-      <button class="out" onclick="fichar('Mari Paz','salida')">Mari Paz — Salida</button>
+      <button class="in"  onclick="fichar(this,'Salvador','entrada')">Salvador — Entrada</button>
+      <button class="out" onclick="fichar(this,'Salvador','salida')">Salvador — Salida</button>
+      <button class="in"  onclick="fichar(this,'Mari Paz','entrada')">Mari Paz — Entrada</button>
+      <button class="out" onclick="fichar(this,'Mari Paz','salida')">Mari Paz — Salida</button>
     </div>
     <div id="status" class="status">Listo</div>
   </div>
@@ -50,52 +43,70 @@
     const WEBAPP = "https://script.google.com/macros/s/AKfycbyIWt6JlbjeuWrFKP8VD9V6-6-DUVLbpxH0BsQNO33jnicOxXMqGDJolDtQe5XvO5P6/exec";
     const statusBox = document.getElementById('status');
 
-    // === Audio + vibración ===
+    // ---- Audio + vibración (desbloqueo en primer gesto) ----
     let AC = null, audioUnlocked = false;
     function ensureAC_(){ if(!AC){ const Ctx=window.AudioContext||window.webkitAudioContext; if(Ctx) AC=new Ctx(); } return !!AC; }
-    async function unlockAudio_(){ if(audioUnlocked) return; if(!ensureAC_()) return; try{ if(AC.state==='suspended') await AC.resume(); const o=AC.createOscillator(), g=AC.createGain(); g.gain.value=0.0001; o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+0.02); audioUnlocked=true; }catch(_){} }
+    async function unlockAudio_(){ if(audioUnlocked) return; if(!ensureAC_()) return;
+      try{ if(AC.state==='suspended') await AC.resume();
+        const o=AC.createOscillator(), g=AC.createGain(); g.gain.value=0.0001; o.connect(g).connect(AC.destination);
+        o.start(); o.stop(AC.currentTime+0.02); audioUnlocked=true;
+      }catch(_){} }
     ['pointerdown','touchstart','mousedown','keydown'].forEach(evt=>window.addEventListener(evt, unlockAudio_, {once:true, passive:true}));
 
-    async function beep_(freq=1200, ms=140, type='sine', gain=0.22){
-      try{ if(!ensureAC_()) return; if(AC.state==='suspended') { try{ await AC.resume(); }catch(_){} }
-        const o=AC.createOscillator(), g=AC.createGain();
-        o.type=type; o.frequency.value=freq; g.gain.value=gain;
-        o.connect(g).connect(AC.destination); o.start();
-        setTimeout(()=>{ try{ o.stop(); o.disconnect(); g.disconnect(); }catch(_){} }, ms);
-      }catch(_){}
-    }
+    async function beep_(freq=1200, ms=120, type='sine', gain=0.25){
+      try{ if(!ensureAC_()) return; if(AC.state==='suspended'){ try{ await AC.resume(); }catch(_){} }
+        const o=AC.createOscillator(), g=AC.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=gain;
+        o.connect(g).connect(AC.destination); o.start(); setTimeout(()=>{ try{ o.stop(); o.disconnect(); g.disconnect(); }catch(_){} }, ms);
+      }catch(_){} }
     function vibrate_(p){ if(navigator.vibrate) navigator.vibrate(p); }
-    async function feedbackOk_(){ await beep_(1200,130,'sine',0.22); setTimeout(()=>beep_(1500,110,'sine',0.18),80); vibrate_(60); }
-    async function feedbackErr_(){ await beep_(600,160,'square',0.18); setTimeout(()=>beep_(420,180,'square',0.18),180); vibrate_([120,80,120]); }
+    async function feedbackOk_(){ await beep_(1250,110,'sine',0.25); setTimeout(()=>beep_(1550,100,'sine',0.20),70); vibrate_(50); }
 
     function setStatus(msg){ statusBox.textContent = msg; }
 
-    // === Fichaje con UI optimista + timeout corto ===
-    async function fichar(nombre, tipo){
+    // ---- Envío background sin bloquear UI ----
+    function sendBeaconGet_(url){
+      // Truco GET con Beacon: usamos un cuerpo vacío y param cache-buster
+      try {
+        if (navigator.sendBeacon) {
+          const u = url + (url.includes('?')?'&':'?') + 'beacon=1&t='+Date.now();
+          const blob = new Blob([], {type: 'text/plain'}); // contenido irrelevante
+          return navigator.sendBeacon(u, blob);
+        }
+      } catch(_) {}
+      return false;
+    }
+
+    function fetchQuick_(url){
+      const ctrl = new AbortController();
+      const to = setTimeout(()=>ctrl.abort(), 1000); // timeout 1s
+      return fetch(url, { method:"GET", cache:"no-store", keepalive:true, signal:ctrl.signal })
+        .catch(()=>{}) // silencio
+        .finally(()=>clearTimeout(to));
+    }
+
+    let clickLock = false;
+    async function fichar(btn, nombre, tipo){
+      if (clickLock) return;
+      clickLock = true;
+      btn.disabled = true; setTimeout(()=>{ btn.disabled=false; clickLock=false; }, 1200); // evita doble toque
+
+      await unlockAudio_();
+
+      // UI optimista inmediata
+      const stamp = new Date().toLocaleString("es-ES");
+      setStatus(`OK ${nombre} — ${stamp}`);
+      feedbackOk_();
+
+      // Build URL
       const url = WEBAPP
         + "?nombre=" + encodeURIComponent(nombre)
         + "&tipo=" + encodeURIComponent(tipo)
         + "&plain=1"
         + "&t=" + Date.now();
 
-      // UI optimista rápida
-      const stamp = new Date().toLocaleString("es-ES");
-      setStatus(`OK ${nombre} — ${stamp}`); // pinta inmediato
-      await unlockAudio_();
-      feedbackOk_(); // feedback inmediato
-
-      // Envío con timeout corto; NO abre nuevas pestañas
-      try {
-        const ctrl = new AbortController();
-        const to = setTimeout(()=>ctrl.abort(), 1800); // 1.8s
-        await fetch(url, { method:"GET", cache:"no-store", keepalive:true, signal: ctrl.signal });
-        clearTimeout(to);
-        // Si llega respuesta, no cambiamos nada (ya mostramos OK).
-      } catch(_) {
-        // Silencioso: mantenemos el OK en pantalla para kiosko.
-        // (Si quieres marcar error: descomenta las 2 líneas siguientes)
-        // setStatus("Error de conexión, inténtalo otra vez");
-        // feedbackErr_();
+      // Envío en background
+      if (!sendBeaconGet_(url)) {
+        fetchQuick_(url); // fallback
       }
     }
   </script>
