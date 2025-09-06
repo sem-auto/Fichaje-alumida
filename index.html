@@ -14,14 +14,11 @@
     .wrap { width: 100%; max-width: 560px; padding: 24px; }
     h1 { margin: 0 0 18px; font-size: 22px; text-align: center; }
     .grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); }
-    @media (min-width: 460px) {
-      .grid { grid-template-columns: 1fr 1fr; }
-    }
+    @media (min-width: 460px) { .grid { grid-template-columns: 1fr 1fr; } }
     button {
       appearance: none; border: 0; border-radius: 14px; padding: 18px 16px;
-      font-size: 18px; font-weight: 600; cursor: pointer;
-      color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.12);
-      transition: transform .04s ease; width: 100%;
+      font-size: 18px; font-weight: 600; cursor: pointer; color: #fff;
+      box-shadow: 0 6px 16px rgba(0,0,0,.12); transition: transform .04s ease; width: 100%;
     }
     button:active { transform: scale(.98); }
     .in  { background: #16a34a; }   /* verde */
@@ -49,6 +46,45 @@
     const WEBAPP = "https://script.google.com/macros/s/AKfycbyIWt6JlbjeuWrFKP8VD9V6-6-DUVLbpxH0BsQNO33jnicOxXMqGDJolDtQe5XvO5P6/exec";
     const statusBox = document.getElementById('status');
 
+    // AudioContext único (se crea en el primer toque; compatible con iOS)
+    let AC = null;
+    function ensureAC_() {
+      if (!AC) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) AC = new Ctx();
+      }
+    }
+    function vibrate_(pattern) {
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    }
+    // Beep simple (freq Hz, ms duración). Usa oscilador para evitar problemas de autoplay.
+    async function beep_(freq = 880, ms = 120, type = 'sine', gain = 0.08) {
+      try {
+        ensureAC_();
+        if (!AC) return; // sin soporte, ignorar
+        if (AC.state === 'suspended') await AC.resume();
+        const o = AC.createOscillator();
+        const g = AC.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = gain; // volumen bajo para kiosko
+        o.connect(g).connect(AC.destination);
+        o.start();
+        setTimeout(() => { o.stop(); o.disconnect(); g.disconnect(); }, ms);
+      } catch(_) {}
+    }
+    // Feedback éxito: beep corto + vibración breve
+    function feedbackOk_() {
+      beep_(1000, 120, 'sine', 0.08);
+      vibrate_(60);
+    }
+    // Feedback error: dos tonos descendentes + vibración más larga
+    async function feedbackErr_() {
+      await beep_(600, 120, 'square', 0.06);
+      setTimeout(() => beep_(420, 140, 'square', 0.06), 140);
+      vibrate_([120, 80, 120]);
+    }
+
     function setStatus(msg) { statusBox.textContent = msg; }
 
     async function fichar(nombre, tipo) {
@@ -56,17 +92,19 @@
         + "?nombre=" + encodeURIComponent(nombre)
         + "&tipo=" + encodeURIComponent(tipo)
         + "&plain=1"
-        + "&t=" + Date.now();
+        + "&t=" + Date.now(); // anti-cache
 
       setStatus("Enviando…");
+      ensureAC_(); // prepara audio tras gesto del usuario
 
       try {
         await fetch(url, { method: "GET", cache: "no-store", keepalive: true });
-        // Aunque no podamos leer la respuesta por CORS, damos confirmación local:
         const stamp = new Date().toLocaleString("es-ES");
         setStatus(`OK ${nombre} — ${stamp}`);
+        feedbackOk_();
       } catch (err) {
         setStatus("Error de conexión, inténtalo otra vez");
+        feedbackErr_();
       }
     }
   </script>
