@@ -30,80 +30,38 @@
   <div class="wrap">
     <h1>Fichaje Alumida</h1>
     <div class="grid">
-      <button class="in"  onclick="fichar(this,'Salvador Sánchez Bonet','entrada')">Salvador Sánchez Bonet — Entrada</button>
-      <button class="out" onclick="fichar(this,'Salvador Sánchez Bonet','salida')">Salvador Sánchez Bonet — Salida</button>
-      <button class="in"  onclick="fichar(this,'Mari Paz García Saez','entrada')">Mari Paz García Saez — Entrada</button>
-      <button class="out" onclick="fichar(this,'Mari Paz García Saez','salida')">Mari Paz García Saez — Salida</button>
+      <button class="in"  onclick="fichar('Salvador Sánchez Bonet','entrada')">Salvador Sánchez Bonet — Entrada</button>
+      <button class="out" onclick="fichar('Salvador Sánchez Bonet','salida')">Salvador Sánchez Bonet — Salida</button>
+      <button class="in"  onclick="fichar('Mari Paz García Saez','entrada')">Mari Paz García Saez — Entrada</button>
+      <button class="out" onclick="fichar('Mari Paz García Saez','salida')">Mari Paz García Saez — Salida</button>
     </div>
     <div id="status" class="status">Listo</div>
   </div>
 
+  <!-- Iframe oculto para enviar los fichajes -->
+  <iframe name="hiddenFrame" style="display:none;"></iframe>
+
   <script>
-    // URL WebApp /exec
     const WEBAPP = "https://script.google.com/macros/s/AKfycbwLZPVDZgXbXghtD3vMsoLN5crUKW-Z6Dbf3EyUPeVpcQ8q0_0J1l5a1PxGMhQlwJnY/exec";
     const statusBox = document.getElementById('status');
 
-    // ---- Audio + vibración (desbloqueo en primer gesto) ----
-    let AC = null, audioUnlocked = false;
-    function ensureAC_(){ if(!AC){ const Ctx=window.AudioContext||window.webkitAudioContext; if(Ctx) AC=new Ctx(); } return !!AC; }
-    async function unlockAudio_(){ if(audioUnlocked) return; if(!ensureAC_()) return;
-      try{ if(AC.state==='suspended') await AC.resume();
-        const o=AC.createOscillator(), g=AC.createGain(); g.gain.value=0.0001; o.connect(g).connect(AC.destination);
-        o.start(); o.stop(AC.currentTime+0.02); audioUnlocked=true;
-      }catch(_){} }
-    ['pointerdown','touchstart','mousedown','keydown'].forEach(evt=>window.addEventListener(evt, unlockAudio_, {once:true, passive:true}));
-
-    async function beep_(freq=1200, ms=120, type='sine', gain=0.25){
-      try{ if(!ensureAC_()) return; if(AC.state==='suspended'){ try{ await AC.resume(); }catch(_){} }
-        const o=AC.createOscillator(), g=AC.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=gain;
-        o.connect(g).connect(AC.destination); o.start(); setTimeout(()=>{ try{ o.stop(); o.disconnect(); g.disconnect(); }catch(_){} }, ms);
-      }catch(_){} }
-    function vibrate_(p){ if(navigator.vibrate) navigator.vibrate(p); }
-    async function feedbackOk_(){ await beep_(1250,110,'sine',0.25); setTimeout(()=>beep_(1550,100,'sine',0.20),70); vibrate_(50); }
-
-    function setStatus(msg){ statusBox.textContent = msg; }
-
-    // ---- Envío background sin bloquear UI ----
-    function sendBeaconGet_(url){
-      try {
-        if (navigator.sendBeacon) {
-          const u = url + (url.includes('?')?'&':'?') + 'beacon=1&t='+Date.now();
-          const blob = new Blob([], {type: 'text/plain'});
-          return navigator.sendBeacon(u, blob);
-        }
-      } catch(_) {}
-      return false;
+    function setStatus(msg){
+      statusBox.textContent = msg;
     }
 
-    function fetchQuick_(url){
-      const ctrl = new AbortController();
-      const to = setTimeout(()=>ctrl.abort(), 1000);
-      return fetch(url, { method:"GET", cache:"no-store", keepalive:true, signal:ctrl.signal })
-        .catch(()=>{})
-        .finally(()=>clearTimeout(to));
-    }
-
-    let clickLock = false;
-    async function fichar(btn, nombre, tipo){
-      if (clickLock) return;
-      clickLock = true;
-      btn.disabled = true; setTimeout(()=>{ btn.disabled=false; clickLock=false; }, 1200);
-
-      await unlockAudio_();
-
-      const stamp = new Date().toLocaleString("es-ES");
-      setStatus(`OK ${nombre} — ${stamp}`);
-      feedbackOk_();
-
+    function fichar(nombre, tipo){
       const url = WEBAPP
         + "?nombre=" + encodeURIComponent(nombre)
         + "&tipo=" + encodeURIComponent(tipo)
-        + "&plain=1"
         + "&t=" + Date.now();
 
-      if (!sendBeaconGet_(url)) {
-        fetchQuick_(url);
-      }
+      // Muestra feedback inmediato
+      const stamp = new Date().toLocaleString("es-ES");
+      setStatus(`OK ${nombre} — ${tipo} (${stamp})`);
+
+      // Lanza la petición a través del iframe oculto
+      const iframe = document.querySelector("iframe[name=hiddenFrame]");
+      iframe.src = url;
     }
   </script>
 </body>
