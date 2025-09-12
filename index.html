@@ -5,96 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fichaje Alumida</title>
   <style>
-    body{font-family:Arial, sans-serif; background:#f4f6f8; margin:0; padding:32px; text-align:center}
-    h1{margin:0 0 20px}
-    .row{display:flex; justify-content:center; gap:20px; margin-bottom:22px; flex-wrap:wrap}
-    .btn{flex:1; max-width:360px; padding:20px 28px; font-size:20px; font-weight:700; border:none; border-radius:14px; color:#fff; cursor:pointer}
-    .entrada{background:#28a745} .salida{background:#dc3545}
-    #log{margin:18px auto 0; max-width:760px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; text-align:left; box-shadow:0 6px 24px rgba(0,0,0,.06); font-size:15px}
-    #log.ok{border-color:#86efac; background:#ecfdf5; color:#065f46}
-    #log.err{border-color:#fecaca; background:#fef2f2; color:#991b1b}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    :root { --gap: 22px; }
+    body {
+      font-family: Arial, sans-serif;
+      background:#f4f6f8;
+      margin:0; padding:0;
+      min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    }
+    h1 { margin:42px 0 10px; }
+    .sub { color:#6b7280; margin:0 0 24px; font-size:14px; }
+    /* Contenedor centrado más bajo */
+    .container { width:100%; max-width:920px; margin-top:40px; margin-bottom:30px; display:flex; flex-direction:column; align-items:center; }
+    .row {
+      display:flex; gap:var(--gap); margin:18px 0;
+      flex-wrap:wrap; justify-content:center;
+      width:100%;
+    }
+    .btn {
+      flex:1 1 320px; max-width:360px;
+      padding:22px 26px; font-size:20px; font-weight:700;
+      border:none; border-radius:14px; cursor:pointer; color:#fff;
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+    }
+    .entrada{ background:#28a745; }
+    .salida { background:#dc3545; }
+    /* Caja de confirmación: más alta y menos ancha */
+    #log {
+      margin:28px auto 40px; width: min(84vw, 420px);
+      min-height: 110px; /* más alta */
+      display:none; padding:26px 20px;
+      border-radius:16px; text-align:center;
+      font-size:18px; font-weight:600; line-height:1.35;
+      box-shadow:0 10px 28px rgba(0,0,0,.12); border:2px solid transparent;
+    }
+    #log.ok  { display:block; background:#ecfdf5; color:#065f46; border-color:#86efac; }
+    #log.err { display:block; background:#fef2f2; color:#991b1b; border-color:#f5c2c7; }
   </style>
 </head>
 <body>
   <h1>Fichaje Alumida</h1>
+  <p class="sub">Pulsa tu botón. El beep suena solo si el fichaje se guarda correctamente.</p>
 
-  <div class="row">
-    <button class="btn entrada" onclick="fichar('Salvador Sanchez Bonet','entrada')">Salvador Sánchez Bonet — Entrada</button>
-    <button class="btn salida"  onclick="fichar('Salvador Sanchez Bonet','salida')">Salvador Sánchez Bonet — Salida</button>
+  <div class="container">
+    <div class="row">
+      <button class="btn entrada" onclick="fichar('Salvador Sanchez Bonet','entrada')">
+        Salvador Sánchez Bonet — ENTRADA
+      </button>
+      <button class="btn salida"  onclick="fichar('Salvador Sanchez Bonet','salida')">
+        Salvador Sánchez Bonet — SALIDA
+      </button>
+    </div>
+
+    <div class="row">
+      <button class="btn entrada" onclick="fichar('Mari Paz Garcia Saez','entrada')">
+        Mari Paz Garcia Saez — ENTRADA
+      </button>
+      <button class="btn salida"  onclick="fichar('Mari Paz Garcia Saez','salida')">
+        Mari Paz Garcia Saez — SALIDA
+      </button>
+    </div>
   </div>
 
-  <div class="row">
-    <button class="btn entrada" onclick="fichar('Mari Paz Garcia Saez','entrada')">Mari Paz García Saez — Entrada</button>
-    <button class="btn salida"  onclick="fichar('Mari Paz Garcia Saez','salida')">Mari Paz García Saez — Salida</button>
-  </div>
-
-  <div id="log" class="mono">Listo.</div>
+  <div id="log"></div>
 
   <script>
+    // URL del WebApp
     const WEBAPP = "https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec";
 
-    // Beep robusto con WebAudio (sin <audio>)
+    // Beeps con WebAudio (fiable en móviles si hay gesto previo)
     let ac = null;
+    function ensureAC() {
+      try { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_) {}
+    }
     function beepOK() {
       try {
-        if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+        ensureAC(); if (!ac) return;
         const o = ac.createOscillator(), g = ac.createGain();
-        o.type = 'sine'; o.frequency.value = 880;
-        g.gain.setValueAtTime(0.0001, ac.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.2, ac.currentTime + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.15);
-        o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.16);
+        o.type='sine'; o.frequency.value=880;
+        g.gain.setValueAtTime(0.001, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.22, ac.currentTime+0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.16);
+        o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.17);
       } catch(_) {}
     }
     function beepErr() {
       try {
-        if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+        ensureAC(); if (!ac) return;
         const o = ac.createOscillator(), g = ac.createGain();
-        o.type = 'square'; o.frequency.value = 220;
-        g.gain.setValueAtTime(0.0001, ac.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.25, ac.currentTime + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.20);
-        o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.21);
+        o.type='square'; o.frequency.value=220;
+        g.gain.setValueAtTime(0.001, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.28, ac.currentTime+0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.22);
+        o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.23);
       } catch(_) {}
     }
 
-    function setLog(msg, ok=true) {
-      const el = document.getElementById('log');
-      el.className = (ok ? 'ok' : 'err');
-      el.id = 'log'; // mantener id
-      el.innerText = msg;
-    }
-
-    async function fichar(nombre, tipo) {
-      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}`;
-      setLog(`Enviando — ${nombre} — ${tipo.toUpperCase()}…`, true);
-
-      try {
-        // no-cors: evita abrir pestaña; timeout de 12s
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 12000);
-        await fetch(url, { method: 'GET', mode: 'no-cors', signal: ctrl.signal });
-        clearTimeout(t);
-
-        const hh = new Date().toLocaleTimeString();
-        setLog(`OK ${nombre} — ${tipo.toUpperCase()} — ${hh} (enviado)`, true);
-        beepOK();
-        if (navigator.vibrate) navigator.vibrate([35]);
-      } catch (e) {
-        setLog(`ERROR al fichar ${nombre} — ${tipo.toUpperCase()}. Revisa conexión/URL.`, false);
-        beepErr();
-        if (navigator.vibrate) navigator.vibrate([60,40,60]);
-      }
-    }
-
-    // iOS requiere gesto para activar audio: primer click toca el contexto
+    // Activar audio en el primer gesto (requisito iOS/Android)
     ['click','touchstart'].forEach(ev=>{
       document.addEventListener(ev, function prime(){
-        try { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); beepOK(); } catch(_){}
+        ensureAC(); // crea el contexto por gesto
         document.removeEventListener(ev, prime);
       }, { once:true });
     });
+
+    function showLog(msg, ok=true){
+      const box = document.getElementById('log');
+      box.className = ok ? 'ok' : 'err';
+      box.textContent = msg;
+    }
+
+    async function fichar(nombre, tipo){
+      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}`;
+      showLog(`Enviando — ${nombre} — ${tipo.toUpperCase()}…`, true);
+
+      try {
+        // no-cors: no abre pestañas; si no lanza excepción, asumimos éxito
+        const ctrl = new AbortController();
+        const t = setTimeout(()=>ctrl.abort(), 12000);
+        await fetch(url, { method:'GET', mode:'no-cors', signal:ctrl.signal });
+        clearTimeout(t);
+
+        const hh = new Date().toLocaleTimeString();
+        showLog(`OK ${nombre} — ${tipo.toUpperCase()} — ${hh}`, true);
+        beepOK(); if (navigator.vibrate) navigator.vibrate(30);
+      } catch (e) {
+        showLog(`ERROR al fichar ${nombre} — ${tipo.toUpperCase()}. Revisa conexión/URL.`, false);
+        beepErr(); if (navigator.vibrate) navigator.vibrate([60,40,60]);
+      }
+    }
   </script>
 </body>
 </html>
