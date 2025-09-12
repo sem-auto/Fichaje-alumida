@@ -5,17 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fichaje Alumida</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 40px; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 40px;
+    }
     h1 { margin-bottom: 30px; }
     .btn {
-      display: inline-block;
-      margin: 10px;
-      padding: 15px 30px;
-      font-size: 18px;
+      display: block;
+      margin: 20px auto;
+      padding: 20px 30px;
+      font-size: 22px;
       border: none;
-      border-radius: 8px;
+      border-radius: 12px;
       cursor: pointer;
       color: #fff;
+      width: 320px;
     }
     .entrada { background: #28a745; }
     .salida  { background: #dc3545; }
@@ -24,19 +31,26 @@
 <body>
   <h1>Fichaje Alumida</h1>
 
-  <h2>Salvador Sanchez Bonet</h2>
-  <a class="btn entrada" href="https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec?nombre=Salvador%20Sanchez%20Bonet&tipo=entrada">Entrada</a>
-  <a class="btn salida"  href="https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec?nombre=Salvador%20Sanchez%20Bonet&tipo=salida">Salida</a>
+  <button class="btn entrada" onclick="fichar('Salvador Sanchez Bonet','entrada')">Salvador Sánchez Bonet — Entrada</button>
+  <button class="btn salida"  onclick="fichar('Salvador Sanchez Bonet','salida')">Salvador Sánchez Bonet — Salida</button>
 
-  <h2>Mari Paz Garcia Saez</h2>
-  <a class="btn entrada" href="https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec?nombre=Mari%20Paz%20Garcia%20Saez&tipo=entrada">Entrada</a>
-  <a class="btn salida"  href="https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec?nombre=Mari%20Paz%20Garcia%20Saez&tipo=salida">Salida</a>
+  <button class="btn entrada" onclick="fichar('Mari Paz Garcia Saez','entrada')">Mari Paz Garcia Saez — Entrada</button>
+  <button class="btn salida"  onclick="fichar('Mari Paz Garcia Saez','salida')">Mari Paz Garcia Saez — Salida</button>
 
   <audio id="beepOk" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+
   <script>
-    document.querySelectorAll("a.btn").forEach(b=>{
-      b.addEventListener("click", ()=>{ document.getElementById("beepOk").play(); });
-    });
+    const WEBAPP = "https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec";
+
+    async function fichar(nombre, tipo) {
+      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}`;
+      try {
+        await fetch(url);
+        document.getElementById('beepOk').play();
+      } catch (err) {
+        alert("Error al fichar");
+      }
+    }
   </script>
 </body>
 </html>
