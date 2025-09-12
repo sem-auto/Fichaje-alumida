@@ -14,7 +14,6 @@
     }
     h1 { margin:42px 0 10px; }
     .sub { color:#6b7280; margin:0 0 24px; font-size:14px; }
-    /* Contenedor centrado más bajo */
     .container { width:100%; max-width:920px; margin-top:40px; margin-bottom:30px; display:flex; flex-direction:column; align-items:center; }
     .row {
       display:flex; gap:var(--gap); margin:18px 0;
@@ -29,10 +28,9 @@
     }
     .entrada{ background:#28a745; }
     .salida { background:#dc3545; }
-    /* Caja de confirmación: más alta y menos ancha */
     #log {
       margin:28px auto 40px; width: min(84vw, 420px);
-      min-height: 110px; /* más alta */
+      min-height: 110px;
       display:none; padding:26px 20px;
       border-radius:16px; text-align:center;
       font-size:18px; font-weight:600; line-height:1.35;
@@ -67,71 +65,76 @@
   </div>
 
   <div id="log"></div>
+  <div id="hidden" style="position:absolute; width:1px; height:1px; overflow:hidden; left:-9999px;"></div>
 
   <script>
-    // URL del WebApp
     const WEBAPP = "https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec";
 
-    // Beeps con WebAudio (fiable en móviles si hay gesto previo)
+    // Beeps con WebAudio
     let ac = null;
-    function ensureAC() {
-      try { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_) {}
-    }
-    function beepOK() {
-      try {
-        ensureAC(); if (!ac) return;
-        const o = ac.createOscillator(), g = ac.createGain();
+    function ensureAC(){ try{ if(!ac) ac = new (window.AudioContext||window.webkitAudioContext)(); }catch(_){} }
+    function beepOK(){
+      try{ ensureAC(); if(!ac) return;
+        const o=ac.createOscillator(), g=ac.createGain();
         o.type='sine'; o.frequency.value=880;
         g.gain.setValueAtTime(0.001, ac.currentTime);
         g.gain.exponentialRampToValueAtTime(0.22, ac.currentTime+0.01);
         g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.16);
         o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.17);
-      } catch(_) {}
-    }
-    function beepErr() {
-      try {
-        ensureAC(); if (!ac) return;
-        const o = ac.createOscillator(), g = ac.createGain();
+      }catch(_){} }
+    function beepErr(){
+      try{ ensureAC(); if(!ac) return;
+        const o=ac.createOscillator(), g=ac.createGain();
         o.type='square'; o.frequency.value=220;
         g.gain.setValueAtTime(0.001, ac.currentTime);
         g.gain.exponentialRampToValueAtTime(0.28, ac.currentTime+0.01);
         g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.22);
         o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.23);
-      } catch(_) {}
-    }
+      }catch(_){} }
 
-    // Activar audio en el primer gesto (requisito iOS/Android)
+    // Activar audio en primer gesto
     ['click','touchstart'].forEach(ev=>{
-      document.addEventListener(ev, function prime(){
-        ensureAC(); // crea el contexto por gesto
-        document.removeEventListener(ev, prime);
-      }, { once:true });
+      document.addEventListener(ev,function prime(){ ensureAC(); document.removeEventListener(ev,prime); },{once:true});
     });
 
     function showLog(msg, ok=true){
-      const box = document.getElementById('log');
-      box.className = ok ? 'ok' : 'err';
+      const box=document.getElementById('log');
+      box.className = ok?'ok':'err';
       box.textContent = msg;
     }
 
-    async function fichar(nombre, tipo){
-      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}`;
+    function fichar(nombre,tipo){
+      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1`;
       showLog(`Enviando — ${nombre} — ${tipo.toUpperCase()}…`, true);
 
-      try {
-        // no-cors: no abre pestañas; si no lanza excepción, asumimos éxito
-        const ctrl = new AbortController();
-        const t = setTimeout(()=>ctrl.abort(), 12000);
-        await fetch(url, { method:'GET', mode:'no-cors', signal:ctrl.signal });
-        clearTimeout(t);
+      const box=document.getElementById('hidden');
+      const ifr=document.createElement('iframe');
+      ifr.style.width='1px'; ifr.style.height='1px'; ifr.loading='eager';
+      let done=false;
+      const cleanup=()=>{try{box.removeChild(ifr);}catch(_){}};
 
-        const hh = new Date().toLocaleTimeString();
+      ifr.onload=()=>{
+        if(done) return; done=true;
+        const hh=new Date().toLocaleTimeString();
         showLog(`OK ${nombre} — ${tipo.toUpperCase()} — ${hh}`, true);
-        beepOK(); if (navigator.vibrate) navigator.vibrate(30);
-      } catch (e) {
-        showLog(`ERROR al fichar ${nombre} — ${tipo.toUpperCase()}. Revisa conexión/URL.`, false);
-        beepErr(); if (navigator.vibrate) navigator.vibrate([60,40,60]);
-      }
+        beepOK(); if(navigator.vibrate) navigator.vibrate(30);
+        setTimeout(cleanup,200);
+      };
+      ifr.onerror=()=>{
+        if(done) return; done=true;
+        showLog(`ERROR al fichar ${nombre} — ${tipo.toUpperCase()}`, false);
+        beepErr(); if(navigator.vibrate) navigator.vibrate([60,40,60]);
+        setTimeout(cleanup,200);
+      };
+      ifr.src=url;
+      box.appendChild(ifr);
+
+      setTimeout(()=>{
+        if(done) return; done=true;
+        showLog(`ERROR (tiempo agotado) — ${nombre} — ${tipo.toUpperCase()}`, false);
+        beepErr(); if(navigator.vibrate) navigator.vibrate([60,40,60]);
+        cleanup();
+      },15000);
     }
   </script>
 </body>
