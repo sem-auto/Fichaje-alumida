@@ -1,196 +1,54 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fichaje Alumida</title>
   <style>
-    :root { --gap: 18px; }
-    html,body { height:100%; }
-    body {
-      margin: 0; font-family: system-ui, Arial, sans-serif; background: #f4f6f8; color: #111;
-      display:grid; place-items:center; min-height:100vh;
-    }
-    .wrap { width: 100%; max-width: 620px; padding: 24px; }
-    .card {
-      background:#fff; border-radius:16px; box-shadow: 0 8px 30px rgba(0,0,0,.08);
-      padding:24px; display:flex; flex-direction:column; gap:var(--gap);
-    }
-    h1 { margin:0; font-size: 22px; }
-    .row { display:grid; grid-template-columns: 1fr; gap:var(--gap); }
-    .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap:var(--gap); }
-    label { font-size:14px; color:#444; }
-    input[type="text"] {
-      width:100%; padding:14px 16px; border:1px solid #e2e8f0; border-radius:12px; font-size:16px;
-      outline:none; transition:border .2s, box-shadow .2s; background:#fafbfc;
-    }
-    input[type="text"]:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); background:#fff; }
+    body { font-family: Arial, sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 40px; }
+    h1 { margin-bottom: 30px; }
+    input { padding: 10px; font-size: 16px; margin-bottom: 20px; width: 280px; }
     .btn {
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:16px 18px; border-radius:14px; font-weight:700; font-size:18px;
-      border:none; cursor:pointer; transition:transform .05s ease, filter .15s ease;
-      text-align:center; user-select:none;
+      display: inline-block;
+      margin: 10px;
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #fff;
     }
-    .btn:active { transform: scale(0.99); }
-    .btn:disabled { opacity:.55; filter:grayscale(20%); cursor:not-allowed; }
-    .btn-green { background:#22c55e; color:#fff; }
-    .btn-red   { background:#ef4444; color:#fff; }
-    .switch { display:flex; align-items:center; gap:10px; }
-    .muted { color:#65738a; font-size:13px; }
-    .status {
-      border-radius:12px; padding:12px 14px; font-size:15px; line-height:1.4;
-      display:flex; align-items:center; gap:10px;
-    }
-    .ok    { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
-    .error { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
-    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#eef2ff; padding:2px 6px; border-radius:6px; }
-    .quick { display:flex; flex-wrap:wrap; gap:10px; }
-    .chip {
-      border:1px solid #e2e8f0; padding:8px 12px; border-radius:999px; background:#fff; cursor:pointer;
-      font-size:14px;
-    }
-    footer { text-align:center; color:#8a94a6; font-size:12px; }
+    .entrada { background: #28a745; }
+    .salida  { background: #dc3545; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Fichaje Alumida</h1>
+  <h1>Fichaje Alumida</h1>
+  <input id="nombre" type="text" placeholder="Escribe tu nombre" />
 
-      <div class="row">
-        <div>
-          <label>Nombre</label>
-          <input id="nombre" type="text" placeholder="Escribe tu nombre…" list="nombres" autocomplete="name" />
-          <datalist id="nombres">
-            <option value="Salvador Sanchez Bonet"></option>
-            <option value="Mari Paz Garcia Saez"></option>
-          </datalist>
-          <div class="quick" id="chips"></div>
-        </div>
-
-        <div class="switch">
-          <input id="sinPausa" type="checkbox" />
-          <label for="sinPausa">Salida sin pausa (añade <span class="kbd">sinPausa=true</span>)</label>
-        </div>
-
-        <div class="grid-2">
-          <button class="btn btn-green" id="btnEntrada">Fichar ENTRADA</button>
-          <button class="btn btn-red"   id="btnSalida">Fichar SALIDA</button>
-        </div>
-
-        <div id="status" class="status" style="display:none;"></div>
-        <div class="muted" id="hint"></div>
-      </div>
-    </div>
-
-    <footer>La pestaña no redirige. Se registra en Google Sheets y se confirma con sonido.</footer>
+  <div>
+    <button class="btn entrada" onclick="fichar('entrada')">Fichar Entrada</button>
+    <button class="btn salida"  onclick="fichar('salida')">Fichar Salida</button>
   </div>
 
-  <!-- Beep OK (data URI, ~0.2s) -->
-  <audio id="beepOk" preload="auto"
-    src="data:audio/wav;base64,UklGRmAAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAChAAAAAAAAgP///wAAAP///wAAAP///wAAAP///wAAAP///wAAAP///wAAAP8AAP//AAD//wAA//8AAP//AAD//wAA"></audio>
-  <!-- Beep Error (short) -->
-  <audio id="beepErr" preload="auto"
-    src="data:audio/wav;base64,UklGRmAAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAChAAAAAAAAgP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8A"></audio>
+  <audio id="beepOk" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
 
   <script>
     const WEBAPP = "https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec";
 
-    const el = (id) => document.getElementById(id);
-    const $nombre   = el('nombre');
-    const $sinPausa = el('sinPausa');
-    const $btnIn    = el('btnEntrada');
-    const $btnOut   = el('btnSalida');
-    const $status   = el('status');
-    const $hint     = el('hint');
-    const beepOk    = el('beepOk');
-    const beepErr   = el('beepErr');
-
-    const COMMON_NAMES = [
-      "Salvador Sanchez Bonet",
-      "Mari Paz Garcia Saez"
-    ];
-
-    function renderChips() {
-      const c = document.getElementById('chips');
-      c.innerHTML = '';
-      COMMON_NAMES.forEach(n => {
-        const b = document.createElement('button');
-        b.className = 'chip';
-        b.textContent = n;
-        b.onclick = () => { $nombre.value = n; localStorage.setItem('fichaje_nombre', n); };
-        c.appendChild(b);
-      });
-    }
-
-    function setStatus(kind, msg) {
-      $status.style.display = 'block';
-      $status.className = 'status ' + (kind === 'ok' ? 'ok' : 'error');
-      $status.textContent = msg;
-    }
-
-    function lockUI(lock) {
-      $btnIn.disabled = lock;
-      $btnOut.disabled = lock;
-      $nombre.disabled = lock;
-      $sinPausa.disabled = lock;
-    }
-
     async function fichar(tipo) {
-      const nombre = ($nombre.value || '').trim();
-      if (!nombre) { setStatus('error', 'Introduce el nombre.'); beepErr.play().catch(()=>{}); return; }
+      const nombre = document.getElementById('nombre').value.trim();
+      if (!nombre) { alert("Escribe tu nombre"); return; }
 
-      localStorage.setItem('fichaje_nombre', nombre);
-
-      const params = new URLSearchParams({
-        nombre: encodeURIComponent(nombre),
-        tipo
-      });
-      if ($sinPausa.checked && tipo === 'salida') params.set('sinPausa', 'true');
-      // Para pruebas silenciosas en apps móviles, puedes añadir &plain=1 si quieres ver texto.
-      // params.set('plain','1');
-
-      const url = WEBAPP + '?' + params.toString();
-
-      lockUI(true);
-      setStatus('ok', 'Enviando…');
+      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}`;
       try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 12000);
-        const res = await fetch(url, { method: 'GET', mode: 'no-cors', signal: ctrl.signal });
-        clearTimeout(t);
-
-        // Aunque no-cors no permite leer estado, si no lanza excepción asumimos OK.
-        setStatus('ok', `OK ${nombre} — ${new Date().toLocaleTimeString()}`);
-        try { navigator.vibrate && navigator.vibrate([40]); } catch(_){}
-        await beepOk.play().catch(()=>{});
+        await fetch(url);
+        document.getElementById('beepOk').play();
+        alert(`OK ${nombre} — ${tipo.toUpperCase()}`);
       } catch (err) {
-        console.error(err);
-        setStatus('error', 'Error al enviar. Revisa conexión o URL.');
-        try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch(_){}
-        beepErr.play().catch(()=>{});
-      } finally {
-        lockUI(false);
+        alert("Error al fichar");
       }
     }
-
-    $btnIn.addEventListener('click', () => fichar('entrada'));
-    $btnOut.addEventListener('click', () => fichar('salida'));
-
-    // Restore last name
-    (function init() {
-      renderChips();
-      const last = localStorage.getItem('fichaje_nombre') || '';
-      if (last) $nombre.value = last;
-      $hint.textContent = 'Consejo: toca tu nombre y luego ENTRADA o SALIDA. El botón no abre páginas.';
-      // Preload audio (user interaction needed to guarantee play on iOS/Android)
-      document.body.addEventListener('touchstart', primeAudio, { once: true });
-      document.body.addEventListener('click', primeAudio, { once: true });
-      function primeAudio(){ beepOk.play().then(()=>beepOk.pause()).catch(()=>{}); }
-    })();
   </script>
 </body>
 </html>
