@@ -7,7 +7,6 @@
   <style>
     body { font-family: Arial, sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 40px; }
     h1 { margin-bottom: 30px; }
-    input { padding: 10px; font-size: 16px; margin-bottom: 20px; width: 280px; }
     .btn {
       display: inline-block;
       margin: 10px;
@@ -24,31 +23,20 @@
 </head>
 <body>
   <h1>Fichaje Alumida</h1>
-  <input id="nombre" type="text" placeholder="Escribe tu nombre" />
 
-  <div>
-    <button class="btn entrada" onclick="fichar('entrada')">Fichar Entrada</button>
-    <button class="btn salida"  onclick="fichar('salida')">Fichar Salida</button>
-  </div>
+  <h2>Salvador Sanchez Bonet</h2>
+  <a class="btn entrada" href="https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec?nombre=Salvador%20Sanchez%20Bonet&tipo=entrada">Entrada</a>
+  <a class="btn salida"  href="https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec?nombre=Salvador%20Sanchez%20Bonet&tipo=salida">Salida</a>
+
+  <h2>Mari Paz Garcia Saez</h2>
+  <a class="btn entrada" href="https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec?nombre=Mari%20Paz%20Garcia%20Saez&tipo=entrada">Entrada</a>
+  <a class="btn salida"  href="https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec?nombre=Mari%20Paz%20Garcia%20Saez&tipo=salida">Salida</a>
 
   <audio id="beepOk" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
-
   <script>
-    const WEBAPP = "https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec";
-
-    async function fichar(tipo) {
-      const nombre = document.getElementById('nombre').value.trim();
-      if (!nombre) { alert("Escribe tu nombre"); return; }
-
-      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}`;
-      try {
-        await fetch(url);
-        document.getElementById('beepOk').play();
-        alert(`OK ${nombre} — ${tipo.toUpperCase()}`);
-      } catch (err) {
-        alert("Error al fichar");
-      }
-    }
+    document.querySelectorAll("a.btn").forEach(b=>{
+      b.addEventListener("click", ()=>{ document.getElementById("beepOk").play(); });
+    });
   </script>
 </body>
 </html>
