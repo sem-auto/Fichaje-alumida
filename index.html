@@ -6,14 +6,32 @@
   <title>Fichaje Alumida</title>
   <style>
     :root { --gap: 22px; }
-    body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+    body {
+      font-family: Arial, sans-serif;
+      background:#f4f6f8;
+      margin:0; padding:0;
+      min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    }
     h1 { margin:42px 0 10px; }
     .sub { color:#6b7280; margin:0 0 24px; font-size:14px; }
     .container { width:100%; max-width:920px; margin-top:40px; margin-bottom:30px; display:flex; flex-direction:column; align-items:center; }
     .row { display:flex; gap:var(--gap); margin:18px 0; flex-wrap:wrap; justify-content:center; width:100%; }
-    .btn { flex:1 1 320px; max-width:360px; padding:22px 26px; font-size:20px; font-weight:700; border:none; border-radius:14px; cursor:pointer; color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.08); }
-    .entrada{ background:#28a745; } .salida { background:#dc3545; }
-    #log { margin:28px auto 40px; width:min(84vw,420px); min-height:110px; display:none; padding:26px 20px; border-radius:16px; text-align:center; font-size:18px; font-weight:600; line-height:1.35; box-shadow:0 10px 28px rgba(0,0,0,.12); border:2px solid transparent; }
+    .btn {
+      flex:1 1 320px; max-width:360px;
+      padding:22px 26px; font-size:20px; font-weight:700;
+      border:none; border-radius:14px; cursor:pointer; color:#fff;
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+    }
+    .entrada{ background:#28a745; }
+    .salida { background:#dc3545; }
+    #log {
+      margin:28px auto 40px; width:min(84vw,420px);
+      min-height:110px;
+      display:none; padding:26px 20px;
+      border-radius:16px; text-align:center;
+      font-size:18px; font-weight:600; line-height:1.35;
+      box-shadow:0 10px 28px rgba(0,0,0,.12); border:2px solid transparent;
+    }
     #log.ok{ display:block; background:#ecfdf5; color:#065f46; border-color:#86efac; }
     #log.err{ display:block; background:#fef2f2; color:#991b1b; border-color:#f5c2c7; }
   </style>
@@ -36,43 +54,63 @@
   <div id="log"></div>
 
   <script>
-    // URL del WebApp
     const WEBAPP = "https://script.google.com/macros/s/AKfycbw9E5F2hLdS5VSv_xO1bJKL4PoxyizAukJiR8UmMaPKwN4PyWjJ6SmOgatSwVYiKwF-/exec";
 
-    // WebAudio (beeps)
-    let ac=null; function ensureAC(){ try{ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(_){} }
-    function beepOK(){ try{ ensureAC(); if(!ac) return; const o=ac.createOscillator(), g=ac.createGain(); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.001, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.22, ac.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.16); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.17);}catch(_){}} 
-    function beepErr(){ try{ ensureAC(); if(!ac) return; const o=ac.createOscillator(), g=ac.createGain(); o.type='square'; o.frequency.value=220; g.gain.setValueAtTime(0.001, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.28, ac.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.22); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.23);}catch(_){}} 
+    // Beeps con WebAudio
+    let ac=null;
+    function ensureAC(){ try{ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(_){} }
+    function beepOK(){ try{ ensureAC(); if(!ac) return;
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type='sine'; o.frequency.value=880;
+      g.gain.setValueAtTime(0.001, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.22, ac.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.16);
+      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.17);
+    }catch(_){}} 
+    function beepErr(){ try{ ensureAC(); if(!ac) return;
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type='square'; o.frequency.value=220;
+      g.gain.setValueAtTime(0.001, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.28, ac.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.22);
+      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.23);
+    }catch(_){}} 
     ['click','touchstart'].forEach(ev=>document.addEventListener(ev,()=>ensureAC(),{once:true}));
 
-    function showLog(msg, ok=true){ const box=document.getElementById('log'); box.className= ok?'ok':'err'; box.textContent=msg; }
+    function showLog(msg, ok=true){
+      const box=document.getElementById('log');
+      box.className= ok?'ok':'err';
+      box.textContent=msg;
+    }
 
-    // Listener del JSONP (postMessage)
-    window.addEventListener('message', (ev)=>{
-      try{
-        const d = ev.data || {};
-        if (d && d.ok && d.nombre && d.tipo) {
-          showLog(`OK ${d.nombre} — ${String(d.tipo).toUpperCase()} — ${d.ts||new Date().toLocaleTimeString()}`, true);
-          beepOK(); if (navigator.vibrate) navigator.vibrate(30);
-        }
-      }catch(_){}
-    });
-
-    // Disparo por JSONP: inyecta <script src="...&jsonp=1&cb=...">
+    // Nueva función con <img> (éxito inmediato al cargar)
     function fichar(nombre, tipo){
+      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1`;
       showLog(`Enviando — ${nombre} — ${tipo.toUpperCase()}…`, true);
-      const s = document.createElement('script');
-      s.async = true;
-      s.src = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&jsonp=1&cb=${Date.now()}`;
-      s.onerror = ()=>{ showLog(`ERROR al fichar ${nombre} — ${tipo.toUpperCase()}`, false); beepErr(); if (navigator.vibrate) navigator.vibrate([60,40,60]); };
-      document.body.appendChild(s);
-      // Limpieza del <script> unos segundos después
-      setTimeout(()=>{ try{ document.body.removeChild(s); }catch(_){ } }, 10000);
-      // Salvaguarda si no llega nunca el mensaje (red colgada)
-      setTimeout(()=>{ const box=document.getElementById('log'); if (box.className!=='ok'){ showLog(`ERROR (tiempo agotado) — ${nombre} — ${tipo.toUpperCase()}`, false); beepErr(); } }, 15000);
+
+      const img = new Image();
+      let done = false;
+
+      img.onload = () => {
+        if (done) return; done = true;
+        const hh = new Date().toLocaleTimeString();
+        showLog(`OK ${nombre} — ${tipo.toUpperCase()} — ${hh}`, true);
+        beepOK(); if (navigator.vibrate) navigator.vibrate(30);
+      };
+      img.onerror = () => {
+        if (done) return; done = true;
+        showLog(`ERROR al fichar ${nombre} — ${tipo.toUpperCase()}`, false);
+        beepErr(); if (navigator.vibrate) navigator.vibrate([60,40,60]);
+      };
+
+      img.src = url;
+
+      setTimeout(() => {
+        if (done) return; done = true;
+        showLog(`ERROR (tiempo agotado) — ${nombre} — ${tipo.toUpperCase()}`, false);
+        beepErr(); if (navigator.vibrate) navigator.vibrate([60,40,60]);
+      }, 15000);
     }
   </script>
 </body>
 </html>
-
-  
