@@ -5,67 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fichaje Alumida</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 40px;
-    }
+    body { font-family: Arial, sans-serif; text-align:center; background:#f4f6f8; margin:0; padding:40px; }
     h1 { margin-bottom: 30px; }
-    .row {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 25px;
-    }
+    .row { display:flex; justify-content:center; gap:20px; margin-bottom:25px; }
     .btn {
-      flex: 1;
-      padding: 20px 30px;
-      font-size: 20px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      color: #fff;
-      max-width: 300px;
+      flex:1; max-width:320px; padding:20px 30px; font-size:20px; font-weight:700;
+      border:none; border-radius:14px; cursor:pointer; color:#fff;
     }
-    .entrada { background: #28a745; }
-    .salida  { background: #dc3545; }
+    .entrada { background:#28a745; }
+    .salida  { background:#dc3545; }
+    /* Toast */
+    .toast {
+      position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+      min-width:280px; max-width:90vw; padding:14px 18px; border-radius:10px;
+      box-shadow:0 8px 24px rgba(0,0,0,.12); color:#0f5132; background:#d1e7dd; border:1px solid #badbcc;
+      font-size:16px; display:none;
+    }
+    .toast.error { color:#842029; background:#f8d7da; border-color:#f5c2c7; }
   </style>
 </head>
 <body>
   <h1>Fichaje Alumida</h1>
 
   <div class="row">
-    <button class="btn entrada" onclick="fichar('Salvador Sanchez Bonet','entrada')">
-      Salvador Sánchez Bonet — Entrada
-    </button>
-    <button class="btn salida" onclick="fichar('Salvador Sanchez Bonet','salida')">
-      Salvador Sánchez Bonet — Salida
-    </button>
+    <button class="btn entrada" onclick="fichar('Salvador Sanchez Bonet','entrada')">Salvador Sánchez Bonet — Entrada</button>
+    <button class="btn salida"  onclick="fichar('Salvador Sanchez Bonet','salida')">Salvador Sánchez Bonet — Salida</button>
   </div>
 
   <div class="row">
-    <button class="btn entrada" onclick="fichar('Mari Paz Garcia Saez','entrada')">
-      Mari Paz Garcia Saez — Entrada
-    </button>
-    <button class="btn salida" onclick="fichar('Mari Paz Garcia Saez','salida')">
-      Mari Paz Garcia Saez — Salida
-    </button>
+    <button class="btn entrada" onclick="fichar('Mari Paz Garcia Saez','entrada')">Mari Paz Garcia Saez — Entrada</button>
+    <button class="btn salida"  onclick="fichar('Mari Paz Garcia Saez','salida')">Mari Paz Garcia Saez — Salida</button>
   </div>
 
-  <audio id="beepOk" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+  <div id="toast" class="toast"></div>
+
+  <!-- Beeps -->
+  <audio id="beepOk"  preload="auto" src="data:audio/wav;base64,UklGRmAAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAChAAAAAAAAgP///wAAAP///wAAAP///wAAAP///wAAAP///wAAAP///wAAAP8AAP//AAD//wAA//8AAP//AAD//wAA"></audio>
+  <audio id="beepErr" preload="auto" src="data:audio/wav;base64,UklGRmAAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAChAAAAAAAAgP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8AAP8A"></audio>
 
   <script>
     const WEBAPP = "https://script.google.com/macros/s/AKfycbwIavHSx6Qh61l7WrB8VYowo67h8EeOSFPxRl8uJBHww4WGMSQEmKl3UOQSeupYEaOT/exec";
+    const toast  = document.getElementById('toast');
+    const okSnd  = document.getElementById('beepOk');
+    const errSnd = document.getElementById('beepErr');
+
+    // Desbloquear audio en el primer toque/click
+    ['click','touchstart'].forEach(ev=>{
+      document.addEventListener(ev, function prime(){ okSnd.play().then(()=>okSnd.pause()).catch(()=>{}); document.removeEventListener(ev, prime); }, {once:true});
+    });
+
+    function showToast(msg, isError=false) {
+      toast.className = 'toast' + (isError ? ' error' : '');
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=> toast.style.display='none', 2200);
+    }
 
     async function fichar(nombre, tipo) {
       const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}`;
       try {
-        await fetch(url);
-        document.getElementById('beepOk').play();
-      } catch (err) {
-        alert("Error al fichar");
+        // no-cors evita abrir pestañas y funciona en tablet
+        const ctrl = new AbortController();
+        const t = setTimeout(()=>ctrl.abort(), 12000);
+        await fetch(url, { method:'GET', mode:'no-cors', signal:ctrl.signal });
+        clearTimeout(t);
+
+        const hh = new Date().toLocaleTimeString();
+        showToast(`OK ${nombre} — ${tipo.toUpperCase()} — ${hh}`, false);
+        okSnd.currentTime = 0; okSnd.play().catch(()=>{});
+      } catch (e) {
+        showToast('Error al fichar. Revisa conexión/URL.', true);
+        errSnd.currentTime = 0; errSnd.play().catch(()=>{});
       }
     }
   </script>
