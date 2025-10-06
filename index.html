@@ -1,116 +1,151 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fichaje Alumida</title>
-  <style>
-    :root { --gap: 22px; }
-    body {
-      font-family: Arial, sans-serif;
-      background:#f4f6f8;
-      margin:0; padding:0;
-      min-height:100vh; display:flex; flex-direction:column; align-items:center;
-    }
-    h1 { margin:42px 0 10px; }
-    .sub { color:#6b7280; margin:0 0 24px; font-size:14px; }
-    .container { width:100%; max-width:920px; margin-top:40px; margin-bottom:30px; display:flex; flex-direction:column; align-items:center; }
-    .row { display:flex; gap:var(--gap); margin:18px 0; flex-wrap:wrap; justify-content:center; width:100%; }
-    .btn {
-      flex:1 1 320px; max-width:360px;
-      padding:22px 26px; font-size:20px; font-weight:700;
-      border:none; border-radius:14px; cursor:pointer; color:#fff;
-      box-shadow:0 6px 18px rgba(0,0,0,.08);
-    }
-    .entrada{ background:#28a745; }
-    .salida { background:#dc3545; }
-    #log {
-      margin:28px auto 40px; width:min(84vw,420px);
-      min-height:110px;
-      display:none; padding:26px 20px;
-      border-radius:16px; text-align:center;
-      font-size:18px; font-weight:600; line-height:1.35;
-      box-shadow:0 10px 28px rgba(0,0,0,.12); border:2px solid transparent;
-    }
-    #log.ok{ display:block; background:#ecfdf5; color:#065f46; border-color:#86efac; }
-    #log.err{ display:block; background:#fef2f2; color:#991b1b; border-color:#f5c2c7; }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Fichaje ALUMIDA</title>
+<style>
+  :root{--gap:10px;--btnH:40px;--btnFS:14px;--nameFS:14px}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:system-ui,Arial,sans-serif;background:#edf1f5;color:#0f172a}
+  .wrap{max-width:880px;margin:4px auto;padding:0 8px}
+  h1{margin:4px 0 6px;text-align:center;font-size:18px;font-weight:800}
+  .bar{position:fixed;left:50%;top:6px;transform:translateX(-50%);
+       width:min(860px,94vw);background:#fff;border-radius:10px;
+       box-shadow:0 8px 20px rgba(0,0,0,.15);
+       padding:6px 10px;display:flex;align-items:center;justify-content:center;
+       font-weight:700;font-size:14px;z-index:20}
+  .msg-ok{color:#0f6b35}.msg-err{color:#a21919}.bar[hidden]{display:none}
+  .spacer{height:38px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);
+       padding:8px;display:flex;flex-direction:column;align-items:center}
+  .name{font-weight:700;font-size:var(--nameFS);margin-bottom:6px;text-align:center}
+  .btns{display:flex;gap:8px;width:100%;justify-content:center}
+  .btn{position:relative;flex:1;min-width:90px;height:var(--btnH);border-radius:10px;color:#fff;font-weight:700;
+       font-size:var(--btnFS);display:flex;align-items:center;justify-content:center;user-select:none;cursor:pointer;
+       box-shadow:0 3px 8px rgba(0,0,0,.08)}
+  .btn:active{transform:translateY(1px)}
+  .in{background:linear-gradient(180deg,#168a40,#0f6b35)}
+  .out{background:linear-gradient(180deg,#c43535,#a12626)}
+  .btn[aria-busy="true"]::after{
+    content:"Enviando…";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    border-radius:inherit;background:rgba(0,0,0,.22);color:#fff;font-weight:700;font-size:12px
+  }
+  .card{width:min(420px,94vw);background:#fff;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,.08);padding:8px;margin:10px auto}
+  .card h3{margin:0 0 4px;font-size:12px;font-weight:700;text-align:center}
+  #sig{width:100%;height:160px;background:#fff;border:1.5px dashed #cbd5e1;border-radius:10px;touch-action:none}
+  .actions{display:flex;gap:8px;justify-content:center;margin-top:8px}
+  .actions .b{padding:10px 14px;border:0;border-radius:10px;font-weight:800;cursor:pointer}
+  .clear{background:#eef1f5;color:#111}
+  .send{background:#1366ff;color:#fff}
+</style>
 </head>
 <body>
-  <h1>Fichaje Alumida</h1>
-  <p class="sub">Pulsa tu botón. El beep suena solo si el fichaje se guarda correctamente.</p>
+<div id="bar" class="bar" hidden><span id="barMsg" class="msg-ok">Listo</span></div>
+<div class="spacer" aria-hidden="true"></div>
 
-  <div class="container">
-    <div class="row">
-      <button class="btn entrada" onclick="fichar('Salvador Sanchez Bonet','entrada')">Salvador Sánchez Bonet — ENTRADA</button>
-      <button class="btn salida"  onclick="fichar('Salvador Sanchez Bonet','salida')">Salvador Sánchez Bonet — SALIDA</button>
+<div class="wrap">
+  <h1>Fichaje ALUMIDA</h1>
+
+  <div id="grid" class="grid"></div>
+
+  <section class="card">
+    <h3>Firma</h3>
+    <canvas id="sig"></canvas>
+    <div class="actions">
+      <button class="b clear" id="btnClear">Borrar</button>
+      <button class="b send"  id="btnEnviar">Enviar</button>
     </div>
-    <div class="row">
-      <button class="btn entrada" onclick="fichar('Mari Paz Garcia Saez','entrada')">Mari Paz Garcia Saez — ENTRADA</button>
-      <button class="btn salida"  onclick="fichar('Mari Paz Garcia Saez','salida')">Mari Paz Garcia Saez — SALIDA</button>
-    </div>
-  </div>
+  </section>
+</div>
 
-  <div id="log"></div>
+<iframe id="hiddenFrame" name="hiddenFrame" style="display:none"></iframe>
+<audio id="beepAudio" preload="auto">
+  <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+</audio>
 
-  <script>
-    const WEBAPP = "https://script.google.com/macros/s/AKfycbw9E5F2hLdS5VSv_xO1bJKL4PoxyizAukJiR8UmMaPKwN4PyWjJ6SmOgatSwVYiKwF-/exec";
+<script>
+const ENDPOINT="https://script.google.com/macros/s/AKfycbw9E5F2hLdS5VSv_xO1bJKL4PoxyizAukJiR8UmMaPKwN4PyWjJ6SmOgatSwVYiKwF-/exec";
+const WORKERS=["Salvador Sanchez Bonet","Mari Paz Garcia Saez"];
 
-    // Beeps con WebAudio
-    let ac=null;
-    function ensureAC(){ try{ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(_){} }
-    function beepOK(){ try{ ensureAC(); if(!ac) return;
-      const o=ac.createOscillator(), g=ac.createGain();
-      o.type='sine'; o.frequency.value=880;
-      g.gain.setValueAtTime(0.001, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.22, ac.currentTime+0.01);
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.16);
-      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.17);
-    }catch(_){}} 
-    function beepErr(){ try{ ensureAC(); if(!ac) return;
-      const o=ac.createOscillator(), g=ac.createGain();
-      o.type='square'; o.frequency.value=220;
-      g.gain.setValueAtTime(0.001, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.28, ac.currentTime+0.01);
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.22);
-      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.23);
-    }catch(_){}} 
-    ['click','touchstart'].forEach(ev=>document.addEventListener(ev,()=>ensureAC(),{once:true}));
+const grid=document.getElementById('grid');
+const bar=document.getElementById('bar'), barMsg=document.getElementById('barMsg');
+const hiddenFrame=document.getElementById('hiddenFrame');
+const beepTag=document.getElementById('beepAudio');
 
-    function showLog(msg, ok=true){
-      const box=document.getElementById('log');
-      box.className= ok?'ok':'err';
-      box.textContent=msg;
-    }
+let nombre=null,tipo=null,sending=false;
+function setBar(msg,ok=true){barMsg.textContent=msg;barMsg.className=ok?'msg-ok':'msg-err';bar.hidden=false;}
+function beepOk(){try{beepTag.currentTime=0;beepTag.play().catch(()=>{});}catch{}}
 
-    // Nueva función con <img> (éxito inmediato al cargar)
-    function fichar(nombre, tipo){
-      const url = `${WEBAPP}?nombre=${encodeURIComponent(nombre)}&tipo=${tipo}&plain=1`;
-      showLog(`Enviando — ${nombre} — ${tipo.toUpperCase()}…`, true);
+WORKERS.forEach(N=>{
+  const row=document.createElement('div');row.className='row';
+  const name=document.createElement('div');name.className='name';name.textContent=N;
+  const btns=document.createElement('div');btns.className='btns';
+  const bIn=document.createElement('div');bIn.className='btn in';bIn.textContent='Entrada';
+  const bOut=document.createElement('div');bOut.className='btn out';bOut.textContent='Salida';
+  bIn.onclick=()=>pick(N,'entrada',bIn);
+  bOut.onclick=()=>pick(N,'salida',bOut);
+  btns.appendChild(bIn);btns.appendChild(bOut);
+  row.appendChild(name);row.appendChild(btns);
+  grid.appendChild(row);
+});
 
-      const img = new Image();
-      let done = false;
+function pick(n,t,btn){
+  if(sending) return;
+  nombre=n; tipo=t;
+  setBar(`Seleccionado: ${n} · ${t.toUpperCase()}. Firma y pulsa Enviar.`,true);
+}
 
-      img.onload = () => {
-        if (done) return; done = true;
-        const hh = new Date().toLocaleTimeString();
-        showLog(`OK ${nombre} — ${tipo.toUpperCase()} — ${hh}`, true);
-        beepOK(); if (navigator.vibrate) navigator.vibrate(30);
-      };
-      img.onerror = () => {
-        if (done) return; done = true;
-        showLog(`ERROR al fichar ${nombre} — ${tipo.toUpperCase()}`, false);
-        beepErr(); if (navigator.vibrate) navigator.vibrate([60,40,60]);
-      };
+const sig=document.getElementById('sig');
+const ctx=sig.getContext('2d',{willReadFrequently:true});
+let drawing=false, hasStroke=false, last={x:0,y:0};
 
-      img.src = url;
+function paintWhite(){
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle="#fff";
+  ctx.fillRect(0,0,sig.width,sig.height); ctx.restore();
+}
+function fit(){
+  const r=Math.max(devicePixelRatio||1,1);
+  const w=sig.clientWidth||400, h=sig.clientHeight||160;
+  sig.width=Math.round(w*r); sig.height=Math.round(h*r);
+  ctx.setTransform(r,0,0,r,0,0); paintWhite();
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=3.2; ctx.strokeStyle='#000';
+}
+fit();
+addEventListener('resize',()=>{const img=sig.toDataURL('image/png'); fit(); const im=new Image(); im.onload=()=>ctx.drawImage(im,0,0,sig.clientWidth,sig.clientHeight); im.src=img;});
+function pos(e){const r=sig.getBoundingClientRect(); return {x:(e.touches?e.touches[0].clientX:e.clientX)-r.left, y:(e.touches?e.touches[0].clientY:e.clientY)-r.top};}
+function start(e){drawing=true; last=pos(e); e.preventDefault();}
+function move(e){if(!drawing)return; const p=pos(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; hasStroke=true; e.preventDefault();}
+function end(){drawing=false;}
+sig.addEventListener('mousedown',start); sig.addEventListener('mousemove',move); addEventListener('mouseup',end);
+sig.addEventListener('touchstart',start,{passive:false}); sig.addEventListener('touchmove',move,{passive:false}); sig.addEventListener('touchend',end);
 
-      setTimeout(() => {
-        if (done) return; done = true;
-        showLog(`ERROR (tiempo agotado) — ${nombre} — ${tipo.toUpperCase()}`, false);
-        beepErr(); if (navigator.vibrate) navigator.vibrate([60,40,60]);
-      }, 15000);
-    }
-  </script>
+document.getElementById('btnClear').onclick=()=>{ paintWhite(); hasStroke=false; setBar('Firma borrada.',true); };
+
+document.getElementById('btnEnviar').onclick=async()=>{
+  if(sending) return;
+  if(!nombre||!tipo){ setBar('Selecciona trabajador y tipo.',false); return; }
+  if(!hasStroke){ setBar('Firma requerida.',false); return; }
+  sending=true; setBar('Enviando…',true);
+  try{
+    // fondo blanco bajo trazo
+    ctx.save(); ctx.globalCompositeOperation='destination-over'; ctx.fillStyle='#fff'; ctx.fillRect(0,0,sig.width,sig.height); ctx.restore();
+
+    const dataURL = sig.toDataURL('image/png'); // firma base64
+    const txId = 'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+
+    // POST firma (JSON) y GET fichaje en paralelo
+    const payload = JSON.stringify({ nombre, tipo, firma: dataURL, txId });
+    fetch(ENDPOINT,{ method:'POST', headers:{'Content-Type':'text/plain;charset=UTF-8'}, body:payload }).catch(()=>{});
+    hiddenFrame.src = `${ENDPOINT}?nombre=${encodeURIComponent(nombre)}&tipo=${encodeURIComponent(tipo)}&t=${Date.now()}`;
+
+    setTimeout(()=>{ beepOk(); setBar(`OK ${nombre} — ${tipo.toUpperCase()} · ${new Date().toLocaleTimeString('es-ES')}`, true); paintWhite(); hasStroke=false; sending=false; }, 1200);
+  }catch(_){
+    setBar('Error de red', false); sending=false;
+  }
+};
+</script>
 </body>
 </html>
